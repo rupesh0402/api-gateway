@@ -11,6 +11,7 @@ import (
 
 	"github.com/rupesh0402/api-gateway/config"
 	"github.com/rupesh0402/api-gateway/internal/server"
+	"github.com/rupesh0402/api-gateway/internal/worker"
 )
 
 func main() {
@@ -18,10 +19,27 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// REGISTER ROUTES (ONCE)
+	// Health route
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
+	})
+
+	pool := worker.NewPool(2, 1)
+
+	mux.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
+		respChan := make(chan []byte)
+
+		job := worker.Job{
+			Response: respChan,
+		}
+
+		pool.Submit(job)
+
+		result := <-respChan
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(result)
 	})
 
 	srv := server.NewServer(
@@ -44,6 +62,8 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatalf("server shutdown failed: %v", err)
 	}
+
+	pool.Shutdown()
 
 	log.Println("server exited cleanly")
 }
