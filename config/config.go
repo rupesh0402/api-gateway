@@ -1,12 +1,16 @@
 package config
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
 	Port         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
+	JWTSecret    string
 }
 
 func Load() *Config {
@@ -15,5 +19,6 @@ func Load() *Config {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
+		JWTSecret:    os.Getenv("JWT_SECRET"),
 	}
 }
