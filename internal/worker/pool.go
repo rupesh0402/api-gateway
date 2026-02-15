@@ -3,6 +3,7 @@ package worker
 import (
 	"log"
 	"sync"
+	"time"
 )
 
 type Job struct {
@@ -34,6 +35,7 @@ func (p *Pool) startWorker(id int) {
 
 	for job := range p.jobQueue {
 		// Simulate processing logic
+		time.Sleep(time.Second*2)
 		result := []byte("Processed by worker\n")
 
 		// Send result back to handler

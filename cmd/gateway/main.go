@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/rupesh0402/api-gateway/config"
+	"github.com/rupesh0402/api-gateway/internal/ratelimit"
 	"github.com/rupesh0402/api-gateway/internal/server"
 	"github.com/rupesh0402/api-gateway/internal/worker"
 )
@@ -25,9 +26,18 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
+	limiter := ratelimit.NewLimiter(2, 5)
 	pool := worker.NewPool(2, 1)
 
 	mux.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
+		clientIP := r.RemoteAddr
+
+		if !limiter.Allow(clientIP) {
+			w.WriteHeader(http.StatusTooManyRequests)
+			w.Write([]byte("Rate limit exceeded\n"))
+			return
+		}
+
 		respChan := make(chan []byte)
 
 		job := worker.Job{
